@@ -1,3 +1,4 @@
-# python 3.8
+# python==3.10.11
 webui2==2.4.5
-pyinstaller==5.13.2
+pyinstaller==6.3.0
+chardet==5.2.0
