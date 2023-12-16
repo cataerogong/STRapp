@@ -18,7 +18,7 @@
 
 3. 运行 strapp.exe，可以有多种方式：
 
-    * 在命名提示符窗口中运行
+    * 在命令提示符窗口中运行
 
     ```
     cd /d D:\path\to\SimpleTextReader
