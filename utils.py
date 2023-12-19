@@ -13,7 +13,8 @@ def detect_enc(filename, default_encoding='ascii'):
             if d.done:
                 break
         r = d.close()
-    return (r['encoding'] if r and r['encoding'] else default_encoding)
+    # 经常把 GBK 识别成 GB2312，gb18030 > gbk > gb2312
+    return (d.LEGACY_MAP.get(r['encoding'].lower(), r['encoding']) if r and r['encoding'] else default_encoding)
 
 def open_any_enc(filename, mode='r', default_encoding='ascii'):
     """ open “自动识别文件编码”版本

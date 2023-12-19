@@ -1,2 +1,6 @@
 rd /S /Q build
-pyinstaller -F -w --collect-binaries webui --icon strapp.ico strapp.py
+pyinstaller -F -c ^
+            --hide-console hide-early ^
+            --collect-binaries webui ^
+            --icon strapp.ico ^
+            strapp.py
