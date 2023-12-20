@@ -8,6 +8,7 @@ from webui_helper import append_html, comment_js_file, webui_bind_func, webui_ru
 
 def _get_book_data(webroot: str, fname: str):
     fname = os.path.join(webroot, fname.lstrip('\\/'))
+    print('Loading book:', fname)
     if os.path.exists(fname):
         with open_any_enc(fname) as f:
             return str(f.read())
@@ -24,6 +25,7 @@ def _get_all_books(webroot: str, dir: str):
 
 def _get_progress(webroot: str, fname: str):
     pfile = os.path.join(webroot, fname.lstrip('\\/'))
+    # print('Loading progress:', pfile)
     p = ''
     if os.path.exists(pfile):
         with open(pfile, 'r') as f:
@@ -32,6 +34,7 @@ def _get_progress(webroot: str, fname: str):
 
 def _set_progress(webroot: str, fname: str, progress: str):
     pfile = os.path.join(webroot, fname.lstrip('\\/'))
+    # print('Saving progress:', pfile)
     with open(pfile, 'w') as f:
         f.write(progress)
 
@@ -39,7 +42,6 @@ def patch_html(html):
     js = ["scripts/webdav.js", "scripts/enh-db.js", "scripts/enh-bookshelf.js", "scripts/enh-webdav.js"]
     for j in js:
         html = comment_js_file(html, j)
-    html = append_html("<script")
     return html
 
 def bind_funcs(win, webroot):

@@ -95,7 +95,7 @@ def main():
 			# bind
 			stre.bind_funcs(MyWindow, WEB_ROOT)
 			# patch page
-			stre.patch_html(html)
+			html = stre.patch_html(html)
 		# del js
 		for js in cfg.del_js:
 			print('Comment js:', js)

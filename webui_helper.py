@@ -10,10 +10,10 @@ from utils import open_any_enc
 
 WEBUI_HELPER_JS = '''
 /**
- * 
+ *
  * @param {str} fname Backend bind name
  * @param  {...any} args
- * @returns 
+ * @returns
  */
 async function webui_call_func(fname, ...args) {
     try {
@@ -30,6 +30,7 @@ async function webui_call_func(fname, ...args) {
 }
 '''
 
+
 def is_port_valid(p: int) -> bool:
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	try:
@@ -40,6 +41,7 @@ def is_port_valid(p: int) -> bool:
 	finally:
 		s.close()
 
+
 def append_html(html: str, append_str: str) -> str:
 	""" 在页面末尾 "</html>" 前插入字符串
 
@@ -49,6 +51,7 @@ def append_html(html: str, append_str: str) -> str:
 	if p >= 0:
 		html = html[:p] + append_str + html[p:]
 	return html
+
 
 def append_js(html: str, js_file: str = '', js_str: str = '') -> str:
     """ 在页面末尾 "</html>" 前插入 "载入 js_file 和 js_str" 的 <script> 语句
@@ -65,28 +68,30 @@ def append_js(html: str, js_file: str = '', js_str: str = '') -> str:
         html = append_html(html, f'<script>\n{js_str}\n</script>\n')
     return html
 
-def inject_webui_js(html: str) -> str:
-	""" 在 html 末尾增加载入 webui 功能的代码
-	"""
-	return append_js(html, '/webui.js', WEBUI_HELPER_JS)
 
-def comment_html(html: str, regex_to_comment: str, regex_flags = re.IGNORECASE) -> str:
-	""" 在 html 内搜索正则表达式并注释掉
-	
-	"some string" => "<!-- some string -->"
-	"""
-	m = re.search(regex_to_comment, html, regex_flags)
-	if m:
-		return html[:m.start()] + '<!-- ' + html[m.start():m.end()] + ' -->' + html[m.end():]
-	else:
-		return html
+def inject_webui_js(html: str) -> str:
+    """ 在 html 末尾增加载入 webui 功能的代码 """
+    return append_js(html, '/webui.js', WEBUI_HELPER_JS)
+
+def comment_html(html: str, regex_to_comment: str, regex_flags=re.IGNORECASE) -> str:
+    """ 在 html 内搜索正则表达式并注释掉
+
+    "some string" => "<!-- some string -->"
+    """
+    m = re.search(regex_to_comment, html, regex_flags)
+    if m:
+        return html[:m.start()] + '<!-- ' + html[m.start():m.end()] + ' -->' + html[m.end():]
+    else:
+        print(regex_to_comment)
+        return html
 
 def comment_js_file(html: str, js_file: str) -> str:
-	""" 将 html 内加载 js_file 的语句注释掉
+    """ 将 html 内加载 js_file 的语句注释掉
 
-	"<script src="js_file"></script>" => "<!-- <script src="js_file"></script> -->"
-	"""
-	return comment_html(html, f'''<script\\s+.+{js_file}["']>\\s*</script>''')
+    "<script src="js_file"></script>" => "<!-- <script src="js_file"></script> -->"
+    """
+    safe_str = js_file.replace('.', '\\.')
+    return comment_html(html, f'''<script\\s+.+{safe_str}["']>\\s*</script>''')
 
 def webui_show_html(win: webui.window, html: str, browser: webui.browser = webui.browser.any, append_webui_js: bool = True):
     """ 打开浏览器并展示 html 页面内容
@@ -115,7 +120,7 @@ def webui_bind_func(win: webui.window, name: str, f, debug: bool = False):
         except Exception as ex:
             return json.dumps({'status': 'fail', 'msg': repr(ex)}, ensure_ascii=False)
     win.bind(name, wrapper)
-    print(f'webui bind:', name)
+    print('webui bind:', name)
 
 def webui_run_js(win: webui.window, js_file: PathLike):
     """ 在页面执行 js 脚本
