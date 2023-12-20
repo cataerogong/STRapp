@@ -1,17 +1,19 @@
 import functools
 import os, os.path
+from strapp import BUNDLE_DIR
 from utils import open_any_enc
 
-from webui_helper import webui_bind_func
+from webui_helper import append_html, comment_js_file, webui_bind_func, webui_run_js
 
-def get_book_data(webroot: str, fname: str):
+
+def _get_book_data(webroot: str, fname: str):
     fname = os.path.join(webroot, fname.lstrip('\\/'))
     if os.path.exists(fname):
         with open_any_enc(fname) as f:
             return str(f.read())
     raise FileNotFoundError(f'Can not find file "{fname}"')
 
-def get_all_books(webroot: str, dir: str):
+def _get_all_books(webroot: str, dir: str):
     ret = []
     dir = os.path.normpath(os.path.join(webroot, dir.lstrip('\\/')))
     with os.scandir(dir) as it:
@@ -20,7 +22,7 @@ def get_all_books(webroot: str, dir: str):
                 ret.append({"name": entry.name, "size": entry.stat().st_size})
     return ret
 
-def get_progress(webroot: str, fname: str):
+def _get_progress(webroot: str, fname: str):
     pfile = os.path.join(webroot, fname.lstrip('\\/'))
     p = ''
     if os.path.exists(pfile):
@@ -28,13 +30,24 @@ def get_progress(webroot: str, fname: str):
             p = f.read()
     return p
 
-def set_progress(webroot: str, fname: str, progress: str):
+def _set_progress(webroot: str, fname: str, progress: str):
     pfile = os.path.join(webroot, fname.lstrip('\\/'))
     with open(pfile, 'w') as f:
         f.write(progress)
 
+def patch_html(html):
+    js = ["scripts/webdav.js", "scripts/enh-db.js", "scripts/enh-bookshelf.js", "scripts/enh-webdav.js"]
+    for j in js:
+        html = comment_js_file(html, j)
+    html = append_html("<script")
+    return html
+
 def bind_funcs(win, webroot):
-    webui_bind_func(win, "get_book_data", functools.partial(get_book_data, webroot))
-    webui_bind_func(win, "get_all_books", functools.partial(get_all_books, webroot))
-    webui_bind_func(win, "get_progress", functools.partial(get_progress, webroot))
-    webui_bind_func(win, "set_progress", functools.partial(set_progress, webroot))
+    webui_bind_func(win, "get_book_data", functools.partial(_get_book_data, webroot))
+    webui_bind_func(win, "get_all_books", functools.partial(_get_all_books, webroot))
+    webui_bind_func(win, "get_progress", functools.partial(_get_progress, webroot))
+    webui_bind_func(win, "set_progress", functools.partial(_set_progress, webroot))
+
+def run_js(win):
+    js_file = os.path.normpath(os.path.join(BUNDLE_DIR, 'stre.js'))
+    webui_run_js(win, js_file)

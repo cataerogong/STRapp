@@ -1,20 +1,22 @@
 from datetime import datetime
-import filecmp
 import os
 import os.path
-import re
-import shutil
 import sys
 import argparse
 import shlex
-import socket
+import traceback
 from webui import webui
 
 from utils import open_any_enc
 
+from webui_helper import comment_js_file, is_port_valid, webui_run_js, webui_show_html
+
+
 APP_NAME = 'STRapp'
 APP_VER = 'v0.2.0'
 APP_DESC = 'STRapp - 让 SimpleTextReader 像本地应用程序一样运行'
+
+LOG_FILE = APP_NAME + ".log"
 
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):  # 判断当前执行程序是否是PyInstaller打包后的exe
     BUNDLE_DIR = sys._MEIPASS
@@ -29,64 +31,15 @@ LOG_FILE = os.path.join(PROG_DIR, PROG_NAME + '.log')
 CUR_DIR = os.path.abspath(os.getcwd())
 
 
-def is_port_valid(p: int):
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	try:
-		s.bind(('127.0.0.1', p))
-		return True
-	except OSError:
-		return False
-	finally:
-		s.close()
-
-def append_html(html: str, append_str: str):
-	p = html.lower().rfind('</html>')
-	if p >= 0:
-		html = html[:p] + append_str + html[p:]
-	return html
-
-WEBUI_HELPER_JS = '''
-/**
- * 
- * @param {str} fname Backend bind name
- * @param  {...any} args
- * @returns 
- */
-async function webui_call_func(fname, ...args) {
-    try {
-        let ret = JSON.parse(await webui.call(fname, JSON.stringify(args)));
-        if (ret.status == "succ") {
-            return ret.retval;
-        } else {
-            throw Error("Backend-Error: " + ret.msg);
-        }
-    } catch (e) {
-        // console.log(e);
-        throw e;
-    }
-}
-'''
-
-def inject_webui_js(html: str):
-	# 在 html 末尾增加载入 webui.js，关闭窗口时才能结束进程
-	# 载入 WEBUI_HELPER_JS
-	return append_html(html, f'<script src="/webui.js"></script><script>{WEBUI_HELPER_JS}</script>')
-
-def comment_js_file(html: str, js_file: str):
-	# 将 html 内加载 js_file 的语句注释掉
-	m = re.search(f'''<script\\s+.+{js_file}["']>\\s*</script>''', html, re.IGNORECASE)
-	if m:
-		return html[:m.start()] + '<!-- ' + html[m.start():m.end()] + ' -->' + html[m.end():]
-	else:
-		return html
-
-class MyArgParser(argparse.ArgumentParser):
-    def convert_arg_line_to_args(self, arg_line):
-        return shlex.split(arg_line, comments=True)
+def log_ex(e: Exception):
+	msg = traceback.format_exc()
+	print(msg)
+	with open(LOG_FILE, 'a') as l:
+		l.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' ' + msg + '\n')
 
 def main():
 	# 读取命令行参数
-	parser = MyArgParser(description=APP_DESC, add_help=False, fromfile_prefix_chars='@')
+	parser = argparse.ArgumentParser(description=APP_DESC, add_help=False)
 	parser.add_argument('-r', '--webroot', default='', help='网页根目录（支持相对路径或绝对路径）[默认: 当前目录]')
 	parser.add_argument('-s', '--startpage', metavar='HTML_FILE', default='index.html', help='应用主页 [默认: index.html]')
 	parser.add_argument('-p', '--port', type=int, default=0, help='端口 [默认: 随机]')
@@ -100,7 +53,9 @@ def main():
 	parser.epilog = '【*注意*】如果网页会用到浏览器存储（如cookie,LocalStorage,indexdb），则必须指定端口(-p,--port)'
 	cfg = None
 	if (os.path.exists(ARGS_FILE)):
-		cfg = parser.parse_args(['@' + ARGS_FILE])
+		with open_any_enc(ARGS_FILE) as f:
+			s = f.read()
+		cfg = parser.parse_args(shlex.split(s, comments=True))
 		print('args file:', cfg)
 	cfg = parser.parse_args(namespace=cfg)
 	print('args:', cfg)
@@ -114,13 +69,13 @@ def main():
 	MyWindow = webui.window()
 
 	def show_html(html: str):
-		MyWindow.show(html, BROWSER)
+		webui_show_html(MyWindow, html, browser=BROWSER)
 
 	def show_msg(msg: str='', add_help: bool=True):
-		show_html(inject_webui_js(f'''<html>
+		show_html(f'''<html>
 			<head><meta charset="UTF-8" /><title>{APP_NAME} {APP_VER}</title></head>
 			<body style="background:#fdf3df;">{msg}<hr>{help_msg if add_help else ""}</body>
-			</html>'''))
+			</html>''')
 
 	if (cfg.help):
 		show_msg()
@@ -132,23 +87,30 @@ def main():
 		MyWindow.set_port(cfg.port)
 		MyWindow.set_size(cfg.width, cfg.height)
 		MyWindow.set_root_folder(WEB_ROOT)
+		# read page content
 		with open_any_enc(START_PAGE) as f:
 			html = str(f.read())
-		# del-js
+		if cfg.stre:
+			import stre
+			# bind
+			stre.bind_funcs(MyWindow, WEB_ROOT)
+			# patch page
+			stre.patch_html(html)
+		# del js
 		for js in cfg.del_js:
 			print('Comment js:', js)
 			html = comment_js_file(html, js)
-		html = inject_webui_js(html)
-		# bind functions
-		import stre
-		stre.bind_funcs(MyWindow, WEB_ROOT)
+		# show page
 		show_html(html)
-		# print('js-file:', cfg.js)
-		for js_file in [os.path.normpath(os.path.join(CUR_DIR, j)) for j in cfg.js]:
-			if os.path.exists(js_file):
-				print("Run js:", js_file)
-				with open_any_enc(js_file) as f:
-					MyWindow.script(str(f.read()))
+		# run js
+		try:
+			if cfg.stre:
+				stre.run_js(MyWindow)
+			for js_file in [os.path.normpath(os.path.join(CUR_DIR, j)) for j in cfg.js]:
+				webui_run_js(MyWindow, js_file)
+		except Exception as e:
+			log_ex(e)
+			# show_msg(repr(e), False)
 
 	# Wait until all windows are closed
 	webui.wait()
@@ -159,8 +121,4 @@ if __name__ == "__main__":
 	try:
 		main()
 	except Exception as e:
-		import traceback
-		msg = traceback.format_exc()
-		print(msg)
-		with open(LOG_FILE, 'a') as l:
-			l.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' ' + msg + '\n')
+		log_ex(e)
