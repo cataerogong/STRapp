@@ -55,7 +55,7 @@ def main():
 	if (os.path.exists(ARGS_FILE)):
 		with open_any_enc(ARGS_FILE) as f:
 			s = f.read()
-		cfg = parser.parse_args(shlex.split(s, comments=True))
+		cfg = parser.parse_args(shlex.split(s, comments=True, posix=(os.name == 'posix')))
 		print('args file:', cfg)
 	cfg = parser.parse_args(namespace=cfg)
 	print('args:', cfg)
