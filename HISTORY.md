@@ -1,3 +1,7 @@
+## v1.0.0
+
+* 将应用框架完善成了一个独立的 package [webwin](https://github.com/cataerogong/webwin)，精简本项目的代码
+
 ## v0.3.0-wip
 
 * [+] 增加从参数文件中读取运行参数

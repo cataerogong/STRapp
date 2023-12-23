@@ -12,52 +12,55 @@
 
     下载并解压缩到某个目录。
 
-2. 下载 strapp.exe
+2. 下载 `strapp.exe`
 
-    将 strapp.exe 放到 SimpleTextReader 目录下，就是和 SimpleTextReader 的 index.html 同一个目录下。
+    将 `strapp.exe` 放到 SimpleTextReader 目录下，就是和 SimpleTextReader 的 `index.html` 同一个目录下。
 
-3. 运行 strapp.exe，可以有多种方式：
+3. 运行 `strapp.exe`，可以有多种方式：
 
     * 在命令提示符窗口中运行
+    
+      > 该模式下可以看到后台程序的运行输出信息
 
-    ```
-    cd /d D:\path\to\SimpleTextReader
-    strapp.exe -p 8000
-    ```
+      ```
+      cd /d D:\path\to\SimpleTextReader
+      strapp.exe --port 8000
+      ```
 
-    或者
+    * 快捷方式运行
 
-    * 创建 strapp.exe 的快捷方式，然后修改快捷方式，在“目标”中添加参数 `-p 8000`
+      创建 `strapp.exe` 的快捷方式，然后修改快捷方式，在“目标”中添加参数 `--port 8000`
+
+    * 使用参数文件运行
+
+      在 `strapp.exe` 同目录下创建一个 `strapp.args` 文件，用记事本打开后添加 `--port 8000` 并保存，然后双击 `strapp.exe` 运行
 
 ## strapp.exe 详细参数说明
 
 ```
-usage: strapp [-r WEBROOT] [-s HTML_FILE] [--js JS_FILE] [-p PORT] [-b BROWSER]
-              [--width WIDTH] [--height HEIGHT] [-h]
+usage: strapp.exe [-h] [--webroot STR_ROOT] [--port PORT] [--browser BROWSER] [--stre]
 
 options:
-  -r WEBROOT, --webroot WEBROOT
-                        网页根目录（支持相对路径或绝对路径） [默认: 当前目录]
-  -s HTML_FILE, --startpage HTML_FILE
-                        应用主页 [默认: index.html]
-  --js JS_FILE          加载后执行 js 脚本文件（支持相对路径或绝对路径）
-  -p PORT, --port PORT  端口 [默认: 随机]
-  -b BROWSER, --browser BROWSER
-                        使用的浏览器（必须是本机已安装的） [默认: 系统缺省浏览器]
-                        [可选项: chrome, firefox, edge, safari, chromium, opera, brave, vivaldi, epic, yandex]
-  --width WIDTH         窗口宽度 [默认: 上次运行时宽度]
-  --height HEIGHT       窗口高度 [默认: 上次运行时高度]
-  -h, --help            显示帮助信息
+  -h, --help          show this help message and exit
+  --webroot STR_ROOT  SimpleTextReader 主目录 [默认：当前目录]
+  --port PORT         端口 [默认: 随机]
+  --browser BROWSER   使用的浏览器（必须是本机已安装的）[默认: 系统缺省浏览器][可选项: NoBrowser, any, chrome, firefox, edge, safari,
+                      chromium, opera, brave, vivaldi, epic, yandex, ChromiumBased]
+  --stre              启用 SimpleTextReader-enhance 单机增强模式
 
-【*注意*】如果网页会用到浏览器存储（如cookie,LocalStorage,indexdb），则必须指定端口(-p,--port)，因为不同的端口会被浏览器视为不同的网站。
+【*注意*】用到了浏览器存储（如cookie,LocalStorage,indexdb），必须固定端口(--port)，否则会丢失设置。
 ```
+
+* `--stre` SimpleTextReader-enhance 单机增强模式
+
+  配合我的[修改版](https://github.com/cataerogong/SimpleTextReader/releases)(v1.6.0+)，可以直接读取本机硬盘上的文本文件，让 STRe 变成了一个独立的单机版txt小说阅读器。
 
 ## 彩蛋
 
 * SPA (Single-page Application)
 
-    其实，对于单静态页面的网页应用，都可以用 STRapp 来运行。只要把 strapp.exe 放到网页目录下，然后用恰当的参数运行 strapp.exe 就可以了。
+  其实，对于单静态页面的网页应用，都可以用 STRapp 来运行。只要把 `strapp.exe` 放到网页目录下，然后用恰当的参数运行 `strapp.exe` 就可以了。
 
 ## 感谢
 
-* [WebUI2](github.com/webui-dev/python-webui/)
+* [webui](github.com/webui-dev/python-webui/)

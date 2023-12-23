@@ -1,17 +1,18 @@
 // ------------------------------------------------
-// Module <STRapp>
+// Module <STReApp>
 // ------------------------------------------------
-class SettingGroupSTRapp extends SettingGroupBase {
+class SettingGroupSTReApp extends SettingGroupBase {
 	constructor() {
-		super("STRapp", "STRapp 单机模式");
-		this.add(new SettingText("books", "书籍目录", "/books"));
-		this.add(new SettingText("progress", "阅读进度目录", "/progress"));
+		super("STReApp", "STRe 单机模式");
+		this.add(new SettingText("books", "书籍目录", "books"));
+		this.add(new SettingText("progress", "阅读进度目录", "progress"));
 		this.add(new SettingCheckbox("sortByStatus", "按阅读状态分类排序（在读，未读，读完）", true));
 	}
 
 	genHTML() {
 		let html = `<div id="${this.full_id}" class="setting-group"><div class="sub-cap">${this.desc}</div>
             <div class="setting-group-settings">
+			<div class="row">* 以下目录设置：基于STRe根目录的相对路径 或者 绝对路径</div>
             ${this.get("books").genLabelElm()} ${this.get("books").genInputElm()}
             ${this.get("progress").genLabelElm()} ${this.get("progress").genInputElm()}
             <div class="row">${this.get("sortByStatus").genInputElm()} ${this.get("sortByStatus").genLabelElm()}</div>
@@ -20,14 +21,14 @@ class SettingGroupSTRapp extends SettingGroupBase {
 	}
 
 	apply() {
-		STRapp.booksDir = this.get("books").value.trimEnd().replace(/\/*$/, "");
-		STRapp.progressDir = this.get("progress").value.trimEnd().replace(/\/*$/, "");
-        STRapp.sortByStatus = this.get("sortByStatus").value;
-        STRapp.refreshBookList();
+		STReApp.booksDir = this.get("books").value.trimEnd().replace(/\/*$/, "");
+		STReApp.progressDir = this.get("progress").value.trimEnd().replace(/\/*$/, "");
+        STReApp.sortByStatus = this.get("sortByStatus").value;
+        STReApp.refreshBookList();
 	}
 }
 
-var STRapp = {
+var STReApp = {
 	booksDir: "", // "/books"
 	progressDir: "", // "/progress"
 	sortByStatus: false,
@@ -36,7 +37,7 @@ var STRapp = {
 	async openBook(fname) {
 		showLoadingScreen();
 		// STReHelper.fetchLink(this.booksDir + "/" + fname).then((resp) => {
-        webui_call_func("get_book_data", this.booksDir + "/" + fname).then((data) => {
+			webwin.stre.get_book_data(this.booksDir + "/" + fname).then((data) => {
                 let f = new File([data], fname, { type: "text/plain" });
                 resetVars();
                 handleSelectedFile([f]);
@@ -48,11 +49,11 @@ var STRapp = {
 	},
 
 	async getProgress(name) {
-		return await webui_call_func("get_progress", this.progressDir + "/" + name + ".progress");
+		return await webwin.stre.get_progress(this.progressDir + "/" + name + ".progress");
 	},
 
 	async setProgress(name, progress) {
-		return await webui_call_func("set_progress", this.progressDir + "/" + name + ".progress", progress);
+		return await webwin.stre.set_progress(this.progressDir + "/" + name + ".progress", progress);
 	},
 
 	async saveProgress() {
@@ -78,18 +79,18 @@ var STRapp = {
 		if (filename) {
 			// console.log("Check progress on server: " + filename);
 			try {
-				let progress = await STRapp.getProgress(filename);
+				let progress = await STReApp.getProgress(filename);
 				let m = STRe_PROGRESS_RE.exec(progress);
 				if (m) { // 取到服务端进度
 					let line = parseInt(m.groups["line"]);
 					let curLine = getCurLineNumber();
 					if (line == curLine) { // 进度一致，无需同步
-						STRapp.STReFileLine = filename + ":" + line;
+						STReApp.STReFileLine = filename + ":" + line;
 					} else { // 进度不一致
                         console.log("Load progress on server: " + filename + ":" + progress);
                         setHistory(filename, line);
                         getHistory(filename);
-                        STRapp.STReFileLine = filename + ":" + line;
+                        STReApp.STReFileLine = filename + ":" + line;
 					}
 				}
 			} catch (e) {
@@ -171,7 +172,7 @@ var STRapp = {
         container.html("");
         let booklist = [];
         try {
-            for (const book of await webui_call_func("get_all_books", this.booksDir)) {
+            for (const book of await webwin.stre.get_all_books(this.booksDir)) {
                 let na = getBookNameAndAuthor(book.name.replace(/(.txt)$/i, ''));
                 // booklist.push({filename: book.name, bookname: na.bookName, author: na.author, size: book.data.size});
                 let info = await this.getBookProgress(book.name);
@@ -221,10 +222,10 @@ var STRapp = {
         setTimeout(() => this.loop(), this.syncInterval);
 	},
 	pauseLoop() {
-		STRapp.loopPaused = true;
+		STReApp.loopPaused = true;
 	},
 	resumeLoop() {
-		STRapp.loopPaused = false;
+		STReApp.loopPaused = false;
 	},
 
     async init() {
@@ -232,11 +233,11 @@ var STRapp = {
         fileloadCallback.regAfter(this.loadProgress);
         fileloadCallback.regAfter(this.resumeLoop);
         await this.show();
-        console.log("Module <STRapp> loaded.");
+        console.log("Module <STReApp> loaded.");
         setTimeout(() => this.loop(), this.syncInterval);
 
-        settingMgr.add(new SettingGroupSTRapp());
+        settingMgr.add(new SettingGroupSTReApp());
     }
 };
 
-STRapp.init();
+STReApp.init();
