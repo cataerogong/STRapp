@@ -75,5 +75,8 @@ class STRapp(WebWinApp):
 
 if __name__ == '__main__':
     app = STRapp(__app_name__, __version__, __app_desc__)
-    app.run()
-    app.wait()
+    try:
+        app.run()
+        app.wait()
+    except:
+        app.log_exc()

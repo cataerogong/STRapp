@@ -1,4 +1,6 @@
-# python==3.10.11
+# python==3.8.10
 webui2==2.4.5
 pyinstaller==6.3.0
 chardet==5.2.0
+# Depends on my another project: `webwin`
+#webwin==0.2.1
